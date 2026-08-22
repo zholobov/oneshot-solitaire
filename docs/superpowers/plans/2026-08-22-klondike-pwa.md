@@ -44,7 +44,7 @@ export class Game {
 ```
 Deal: shuffle 52 ids with Fisher–Yates using `rng`; tableau pile i gets i+1 cards, top card faceUp; remaining 24 to stock faceDown. `moves=0, won=false, history=[]`.
 
-- [ ] **Step 1: Write failing tests** in `tests/game.test.mjs`:
+- [x] **Step 1: Write failing tests** in `tests/game.test.mjs`:
 
 ```js
 import { test } from 'node:test';
@@ -73,10 +73,10 @@ test('recycle restores draw order', ...)
 test('draw with empty stock and empty waste returns false', ...)
 ```
 
-- [ ] **Step 2: Run** `node --test tests/` — expect FAIL (module missing).
-- [ ] **Step 3: Implement** deck/deal/draw/recycle in `js/game.js` (history pushes included from the start: `#snapshot()` before-state pushed on every successful mutation; cap history at 200).
-- [ ] **Step 4: Run** `node --test tests/` — expect PASS.
-- [ ] **Step 5: Commit** `feat: engine deal, draw, recycle`
+- [x] **Step 2: Run** `node --test tests/` — expect FAIL (module missing).
+- [x] **Step 3: Implement** deck/deal/draw/recycle in `js/game.js` (history pushes included from the start: `#snapshot()` before-state pushed on every successful mutation; cap history at 200).
+- [x] **Step 4: Run** `node --test tests/` — expect PASS.
+- [x] **Step 5: Commit** `feat: engine deal, draw, recycle`
 
 ### Task 2: Engine — placement rules and moveCard
 
@@ -102,7 +102,7 @@ function emptyGame() { const g = new Game(); g.newGame(1, rng(1));
 function put(g, ref, ids, ups) { /* push makeCard(id) with faceUp per ups into g.pile(ref) */ }
 ```
 
-- [ ] **Step 1: Write failing tests:**
+- [x] **Step 1: Write failing tests:**
 
 ```js
 test('tableau accepts alternating descending', ...)   // red 5 on black 6 ok; black 5 on black 6 no; red 5 on red 6 no; 4 on 6 no
@@ -118,7 +118,7 @@ test('illegal move leaves state unchanged and returns false', ...) // deep-compa
 test('win detected when all foundations complete', ...) // fill 13+13+13+12, move last king -> won === true
 ```
 
-- [ ] **Step 2: Run** — expect FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: engine move validation and moveCard`
+- [x] **Step 2: Run** — expect FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: engine move validation and moveCard`
 
 ### Task 3: Engine — undo, serialize, smart move, auto-finish
 
@@ -138,7 +138,7 @@ Game.prototype.canAutoFinish()   // stock & waste empty, every tableau card face
 Game.prototype.autoFinishStep()  // move one lowest-rank eligible tableau top to a foundation -> bool
 ```
 
-- [ ] **Step 1: Write failing tests:**
+- [x] **Step 1: Write failing tests:**
 
 ```js
 test('undo reverses draw, recycle, move, and flip as single steps', ...)
@@ -154,7 +154,7 @@ test('canAutoFinish only when stock+waste empty and all faceUp', ...)
 test('autoFinishStep drains to win', ...)       // loop autoFinishStep() until false; assert won
 ```
 
-- [ ] **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: engine undo, persistence, smart move, auto-finish`
+- [x] **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: engine undo, persistence, smart move, auto-finish`
 
 ### Task 4: Storage module
 
@@ -171,7 +171,7 @@ export function createStorage(backing = globalThis.localStorage) // -> {save, lo
 ```
 Stored JSON: `{game: game.serialize(), elapsedMs}` under key `klondike-v1`. Tests use a `Map`-backed fake with `getItem/setItem/removeItem`.
 
-- [ ] **Step 1: failing tests** (round-trip, null on missing, null+clear on corrupt JSON and on valid JSON/bad shape, save never throws when backing throws). **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: storage module`
+- [x] **Step 1: failing tests** (round-trip, null on missing, null+clear on corrupt JSON and on valid JSON/bad shape, save never throws when backing throws). **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit** `feat: storage module`
 
 ### Task 5: Static UI — HTML, CSS, card rendering
 
@@ -201,9 +201,9 @@ Layout math (JS, applied via inline transforms; one absolutely-positioned node p
 - `index.html`: viewport meta with `viewport-fit=cover`, safe-area padding, dark-green felt background, manifest + apple meta tags (added in Task 7 but tags can exist now).
 - `js/main.js`: load save via storage (fall back to `newGame(1)`), construct UI, render. Timer: `setInterval` 500ms → `updateHud`; `elapsedMs` accumulates only while `document.visibilityState === 'visible'` and game started (moves>0) and not won; save after every action and on `visibilitychange`.
 
-- [ ] **Step 1:** Write HTML/CSS/UI render path (no interactions yet), main.js bootstrap with new game.
-- [ ] **Step 2:** `python3 -m http.server` + open in browser: verify deal renders correctly at phone width (DevTools iPhone viewport), engine tests still pass.
-- [ ] **Step 3: Commit** `feat: static board rendering`
+- [x] **Step 1:** Write HTML/CSS/UI render path (no interactions yet), main.js bootstrap with new game.
+- [x] **Step 2:** `python3 -m http.server` + open in browser: verify deal renders correctly at phone width (DevTools iPhone viewport), engine tests still pass.
+- [x] **Step 3: Commit** `feat: static board rendering`
 
 ### Task 6: UI interactions
 
@@ -220,9 +220,9 @@ Layout math (JS, applied via inline transforms; one absolutely-positioned node p
 - Auto-finish button: when `canAutoFinish()` — on click, disable input and run `autoFinishStep()` every 120ms until false; then win overlay.
 - Win overlay shown when `game.won` (also right after load of a won save).
 
-- [ ] **Step 1:** Implement tap + drag + buttons + persistence wiring.
-- [ ] **Step 2:** Engine tests still pass; browser walkthrough: draw, tap-to-foundation, drag run, illegal drop snaps back, undo each, new game confirm, reload resumes mid-game state.
-- [ ] **Step 3: Commit** `feat: interactions, undo, persistence wiring`
+- [x] **Step 1:** Implement tap + drag + buttons + persistence wiring.
+- [x] **Step 2:** Engine tests still pass; browser walkthrough: draw, tap-to-foundation, drag run, illegal drop snaps back, undo each, new game confirm, reload resumes mid-game state.
+- [x] **Step 3: Commit** `feat: interactions, undo, persistence wiring`
 
 ### Task 7: PWA — icons, manifest, service worker
 
@@ -236,16 +236,16 @@ Layout math (JS, applied via inline transforms; one absolutely-positioned node p
 - `sw.js`: `CACHE='klondike-v1'`; `ASSETS=[ './', 'index.html', 'css/style.css', 'js/game.js','js/storage.js','js/ui.js','js/main.js', 'manifest.webmanifest', 'icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png' ]`; install → `addAll` + `skipWaiting`; activate → delete other caches + `clients.claim`; fetch → cache-first (`ignoreSearch:true`), navigations fall back to cached `index.html`, misses go to network.
 - `index.html`: manifest link, theme-color, apple-touch-icon, `apple-mobile-web-app-capable`. `main.js`: `navigator.serviceWorker.register('sw.js')` in try/catch, only when supported.
 
-- [ ] **Step 1:** Write and run icon script; verify PNGs open (`file icons/*.png`, view one).
-- [ ] **Step 2:** Manifest + SW + registration; browser check: SW active, offline reload works (DevTools offline), installability check clean.
-- [ ] **Step 3: Commit** `feat: PWA manifest, service worker, icons`
+- [x] **Step 1:** Write and run icon script; verify PNGs open (`file icons/*.png`, view one).
+- [x] **Step 2:** Manifest + SW + registration; browser check: SW active, offline reload works (DevTools offline), installability check clean.
+- [x] **Step 3: Commit** `feat: PWA manifest, service worker, icons`
 
 ### Task 8: Final verification & docs
 
 **Files:**
 - Create: `README.md`
 
-- [ ] **Step 1:** `node --test tests/` — all pass.
-- [ ] **Step 2:** Full browser pass at mobile viewport: complete-game smoke via auto-finish path, draw-3 mode, undo chains, reload-resume, offline reload, no console errors.
-- [ ] **Step 3:** README: what it is, rules summary, local run (`python3 -m http.server`), deploy note (any static host over HTTPS), test command.
-- [ ] **Step 4: Commit** `docs: README` — final state.
+- [x] **Step 1:** `node --test tests/` — all pass.
+- [x] **Step 2:** Full browser pass at mobile viewport: complete-game smoke via auto-finish path, draw-3 mode, undo chains, reload-resume, offline reload, no console errors.
+- [x] **Step 3:** README: what it is, rules summary, local run (`python3 -m http.server`), deploy note (any static host over HTTPS), test command.
+- [x] **Step 4: Commit** `docs: README` — final state.
