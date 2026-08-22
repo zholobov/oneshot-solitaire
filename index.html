@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Solitaire</title>
+<meta name="theme-color" content="#1e6e41">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+<header id="topbar">
+  <button class="btn" id="btn-new">New</button>
+  <button class="btn" id="btn-draw-mode">Draw 1</button>
+  <div id="hud">
+    <span id="hud-moves" title="Moves">0</span>
+    <span id="hud-time" title="Time">0:00</span>
+  </div>
+  <button class="btn" id="btn-undo">Undo</button>
+</header>
+<main id="board"></main>
+<button class="btn" id="btn-autofinish" hidden>Auto finish ✨</button>
+<div id="win-overlay" hidden>
+  <div class="win-box">
+    <h1>You won! 🎉</h1>
+    <p id="win-stats"></p>
+    <button class="btn btn-primary" id="btn-win-new">New game</button>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
