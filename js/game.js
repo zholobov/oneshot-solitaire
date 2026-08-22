@@ -22,6 +22,27 @@ function decodeCard(n) {
   return card;
 }
 
+export function canPlaceOnTableau(card, pile) {
+  if (pile.length === 0) return card.rank === 13;
+  const top = pile[pile.length - 1];
+  return top.faceUp && isRed(top.suit) !== isRed(card.suit) && card.rank === top.rank - 1;
+}
+
+export function canPlaceOnFoundation(card, pile) {
+  if (pile.length === 0) return card.rank === 1;
+  const top = pile[pile.length - 1];
+  return top.suit === card.suit && card.rank === top.rank + 1;
+}
+
+function isValidRun(cards) {
+  for (let i = 1; i < cards.length; i++) {
+    const above = cards[i];
+    const below = cards[i - 1];
+    if (above.rank !== below.rank - 1 || isRed(above.suit) === isRed(below.suit)) return false;
+  }
+  return true;
+}
+
 export class Game {
   constructor() {
     this.stock = [];
@@ -73,6 +94,46 @@ export class Game {
       this.waste.push(card);
     }
     this.moves++;
+    return true;
+  }
+
+  pile(ref) {
+    if (!ref || typeof ref !== 'object') return null;
+    if (ref.k === 'w') return this.waste;
+    if (ref.k === 'f') return this.foundations[ref.i] ?? null;
+    if (ref.k === 't') return this.tableau[ref.i] ?? null;
+    return null;
+  }
+
+  moveCard(from, index, to) {
+    const src = this.pile(from);
+    const dst = this.pile(to);
+    if (!src || !dst || src === dst) return false;
+    if (!Number.isInteger(index) || index < 0 || index >= src.length) return false;
+    const cards = src.slice(index);
+    if (cards.some((c) => !c.faceUp)) return false;
+    // Only tableau sources may move more than the top card.
+    if (from.k !== 't' && index !== src.length - 1) return false;
+    if (cards.length > 1) {
+      if (from.k !== 't' || to.k !== 't') return false;
+      if (!isValidRun(cards)) return false;
+    }
+    if (to.k === 'f') {
+      if (from.k === 'f') return false;
+      if (!canPlaceOnFoundation(cards[0], dst)) return false;
+    } else if (to.k === 't') {
+      if (!canPlaceOnTableau(cards[0], dst)) return false;
+    } else {
+      return false; // waste is never a destination
+    }
+    this.pushHistory();
+    src.length = index;
+    dst.push(...cards);
+    if (from.k === 't' && src.length > 0 && !src[src.length - 1].faceUp) {
+      src[src.length - 1].faceUp = true;
+    }
+    this.moves++;
+    if (this.foundations.every((f) => f.length === 13)) this.won = true;
     return true;
   }
 
