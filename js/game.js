@@ -43,6 +43,27 @@ function isValidRun(cards) {
   return true;
 }
 
+// Throws unless s is a structurally valid game state holding each of the
+// 52 cards exactly once.
+function validateState(s) {
+  if (!s || typeof s !== 'object') throw new Error('not an object');
+  if (s.drawMode !== 1 && s.drawMode !== 3) throw new Error('bad drawMode');
+  if (!Number.isInteger(s.moves) || s.moves < 0) throw new Error('bad moves');
+  if (typeof s.won !== 'boolean') throw new Error('bad won');
+  if (!Array.isArray(s.stock) || !Array.isArray(s.waste)) throw new Error('bad piles');
+  if (!Array.isArray(s.f) || s.f.length !== 4 || !s.f.every(Array.isArray))
+    throw new Error('bad foundations');
+  if (!Array.isArray(s.t) || s.t.length !== 7 || !s.t.every(Array.isArray))
+    throw new Error('bad tableau');
+  const all = [...s.stock, ...s.waste, ...s.f.flat(), ...s.t.flat()];
+  const ids = new Set();
+  for (const n of all) {
+    if (!Number.isInteger(n) || n < 0 || n > 103) throw new Error('bad card');
+    ids.add(Math.floor(n / 2));
+  }
+  if (all.length !== 52 || ids.size !== 52) throw new Error('bad card set');
+}
+
 export class Game {
   constructor() {
     this.stock = [];
@@ -135,6 +156,80 @@ export class Game {
     this.moves++;
     if (this.foundations.every((f) => f.length === 13)) this.won = true;
     return true;
+  }
+
+  // Smart move: single cards try foundations first, then tableau left-to-right;
+  // runs are tableau-only. Skips moving a king-led run that is already at the
+  // bottom of its pile onto another empty pile (a no-op for gameplay).
+  autoMoveFrom(from, index) {
+    const src = this.pile(from);
+    if (!src || index < 0 || index >= src.length) return false;
+    const cards = src.slice(index);
+    const single = cards.length === 1;
+    if (single && from.k !== 'f') {
+      for (let i = 0; i < 4; i++) {
+        if (this.moveCard(from, index, { k: 'f', i })) return true;
+      }
+    }
+    const pointlessKing = from.k === 't' && index === 0 && cards[0].rank === 13;
+    for (let i = 0; i < 7; i++) {
+      if (pointlessKing && this.tableau[i].length === 0) continue;
+      if (this.moveCard(from, index, { k: 't', i })) return true;
+    }
+    return false;
+  }
+
+  canAutoFinish() {
+    return (
+      !this.won &&
+      this.stock.length === 0 &&
+      this.waste.length === 0 &&
+      this.tableau.every((p) => p.every((c) => c.faceUp))
+    );
+  }
+
+  autoFinishStep() {
+    if (!this.canAutoFinish()) return false;
+    let best = null; // {i, rank}
+    for (let i = 0; i < 7; i++) {
+      const pile = this.tableau[i];
+      if (pile.length === 0) continue;
+      const top = pile[pile.length - 1];
+      if (this.foundations.some((f) => canPlaceOnFoundation(top, f))) {
+        if (!best || top.rank < best.rank) best = { i, rank: top.rank };
+      }
+    }
+    if (!best) return false;
+    return this.autoMoveFrom({ k: 't', i: best.i }, this.tableau[best.i].length - 1);
+  }
+
+  undo() {
+    if (this.history.length === 0) return false;
+    this.applyState(this.history.pop());
+    return true;
+  }
+
+  serialize() {
+    const s = this.encodeState();
+    s.history = this.history.map((h) => ({ ...h }));
+    return s;
+  }
+
+  static deserialize(obj) {
+    validateState(obj);
+    const g = new Game();
+    g.applyState(obj);
+    g.history = Array.isArray(obj.history)
+      ? obj.history.filter((h) => {
+          try {
+            validateState(h);
+            return true;
+          } catch {
+            return false;
+          }
+        })
+      : [];
+    return g;
   }
 
   // --- history ---

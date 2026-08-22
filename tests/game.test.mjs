@@ -279,3 +279,157 @@ test('win detected when all foundations complete', () => {
   assert.equal(g.moveCard({ k: 't', i: 0 }, 0, { k: 'f', i: 3 }), true);
   assert.equal(g.won, true);
 });
+
+// --- Task 3: undo, serialize, smart move, auto-finish ---
+
+test('undo reverses draw, recycle, move, and flip as single steps', () => {
+  const g = new Game();
+  g.newGame(1, rng(11));
+  const s0 = JSON.stringify(g.encodeState());
+  assert.equal(g.draw(), true);
+  const s1 = JSON.stringify(g.encodeState());
+  assert.equal(g.undo(), true);
+  assert.equal(JSON.stringify(g.encodeState()), s0);
+
+  // recycle undo
+  g.draw();
+  assert.equal(JSON.stringify(g.encodeState()), s1);
+  for (let i = 0; i < 23; i++) g.draw();
+  const beforeRecycle = JSON.stringify(g.encodeState());
+  g.draw(); // recycle
+  assert.equal(g.undo(), true);
+  assert.equal(JSON.stringify(g.encodeState()), beforeRecycle);
+
+  // move + flip is one undo step
+  const g2 = emptyGame();
+  put(g2, { k: 't', i: 0 }, [['C', 2, false], ['H', 4, true]]);
+  put(g2, { k: 't', i: 1 }, [['S', 5, true]]);
+  const before = JSON.stringify(g2.encodeState());
+  g2.moveCard({ k: 't', i: 0 }, 1, { k: 't', i: 1 });
+  assert.equal(g2.tableau[0][0].faceUp, true);
+  assert.equal(g2.undo(), true);
+  assert.equal(JSON.stringify(g2.encodeState()), before);
+  assert.equal(g2.tableau[0][0].faceUp, false);
+});
+
+test('undo on fresh game returns false', () => {
+  const g = new Game();
+  g.newGame(1, rng(12));
+  assert.equal(g.undo(), false);
+});
+
+test('serialize/deserialize round-trip preserves state and undo', () => {
+  const g = new Game();
+  g.newGame(3, rng(13));
+  g.draw();
+  g.draw();
+  // find any legal tableau->tableau or waste move is not guaranteed; draws suffice
+  const data = JSON.parse(JSON.stringify(g.serialize()));
+  const g2 = Game.deserialize(data);
+  assert.equal(JSON.stringify(g2.serialize()), JSON.stringify(g.serialize()));
+  assert.equal(g2.drawMode, 3);
+  assert.equal(g2.moves, g.moves);
+  // undo works after restore
+  const prev = JSON.stringify(g.history[g.history.length - 1]);
+  assert.equal(g2.undo(), true);
+  assert.equal(JSON.stringify(g2.encodeState()), prev);
+});
+
+test('deserialize rejects corrupt data', () => {
+  const g = new Game();
+  g.newGame(1, rng(14));
+  const good = g.serialize();
+  assert.throws(() => Game.deserialize(null));
+  assert.throws(() => Game.deserialize({}));
+  const dupIds = JSON.parse(JSON.stringify(good));
+  dupIds.stock[0] = dupIds.stock[1]; // duplicate card
+  assert.throws(() => Game.deserialize(dupIds));
+  const badPiles = JSON.parse(JSON.stringify(good));
+  badPiles.t = badPiles.t.slice(0, 5); // missing tableau piles
+  assert.throws(() => Game.deserialize(badPiles));
+  const badCard = JSON.parse(JSON.stringify(good));
+  badCard.stock[0] = 104; // id 52 out of range
+  assert.throws(() => Game.deserialize(badCard));
+});
+
+test('smart move prefers foundation over tableau', () => {
+  const g = emptyGame();
+  put(g, { k: 'f', i: 0 }, [['S', 1, true]]);
+  put(g, { k: 't', i: 0 }, [['S', 2, true]]);
+  put(g, { k: 't', i: 1 }, [['H', 3, true]]); // 2♠ would also fit here
+  assert.equal(g.autoMoveFrom({ k: 't', i: 0 }, 0), true);
+  assert.equal(g.foundations[0].length, 2);
+  assert.equal(g.tableau[1].length, 1);
+});
+
+test('smart move falls back to leftmost legal tableau pile', () => {
+  const g = emptyGame();
+  put(g, { k: 't', i: 2 }, [['S', 9, true]]);
+  put(g, { k: 't', i: 4 }, [['H', 10, true]]);
+  put(g, { k: 't', i: 6 }, [['D', 10, true]]);
+  assert.equal(g.autoMoveFrom({ k: 't', i: 2 }, 0), true);
+  assert.equal(g.tableau[4].length, 2); // leftmost of the two tens
+  assert.equal(g.tableau[6].length, 1);
+});
+
+test('smart move skips pointless king-to-empty when already at pile bottom', () => {
+  const g = emptyGame();
+  put(g, { k: 't', i: 0 }, [['S', 13, true], ['H', 12, true]]);
+  // piles 1..6 empty; moving the king run to another empty pile achieves nothing
+  assert.equal(g.autoMoveFrom({ k: 't', i: 0 }, 0), false);
+  // but a king NOT at the bottom does move to an empty pile
+  const g2 = emptyGame();
+  put(g2, { k: 't', i: 0 }, [['C', 2, false], ['S', 13, true]]);
+  assert.equal(g2.autoMoveFrom({ k: 't', i: 0 }, 1), true);
+  assert.equal(g2.tableau[1][0].rank, 13);
+  assert.equal(g2.tableau[0][0].faceUp, true);
+});
+
+test('smart move of a run goes tableau-only', () => {
+  const g = emptyGame();
+  put(g, { k: 'f', i: 0 }, [['S', 1, true], ['S', 2, true]]); // 3♠ would fit foundation
+  put(g, { k: 't', i: 0 }, [['S', 3, true], ['H', 2, true]]);
+  put(g, { k: 't', i: 1 }, [['D', 4, true]]);
+  assert.equal(g.autoMoveFrom({ k: 't', i: 0 }, 0), true);
+  assert.equal(g.foundations[0].length, 2); // untouched
+  assert.equal(g.tableau[1].length, 3);
+});
+
+test('smart move from waste', () => {
+  const g = emptyGame();
+  put(g, { k: 'w' }, [['D', 7, true]]);
+  put(g, { k: 't', i: 3 }, [['C', 8, true]]);
+  assert.equal(g.autoMoveFrom({ k: 'w' }, 0), true);
+  assert.equal(g.tableau[3].length, 2);
+  assert.equal(g.waste.length, 0);
+});
+
+test('canAutoFinish only when stock+waste empty and all faceUp', () => {
+  const g = emptyGame();
+  put(g, { k: 't', i: 0 }, [['S', 1, true]]);
+  assert.equal(g.canAutoFinish(), true);
+  put(g, { k: 't', i: 1 }, [['C', 3, false], ['H', 2, true]]);
+  assert.equal(g.canAutoFinish(), false);
+  g.tableau[1][0].faceUp = true;
+  assert.equal(g.canAutoFinish(), true);
+  put(g, { k: 'w' }, [['D', 5, true]]);
+  assert.equal(g.canAutoFinish(), false);
+});
+
+test('autoFinishStep drains to win', () => {
+  const g = emptyGame();
+  // Distribute all 52 cards face-up across tableau in reverse rank order per pile
+  for (let s = 0; s < 4; s++) {
+    for (let r = 13; r >= 1; r--) {
+      const c = makeCard(cid(SUITS[s], r));
+      c.faceUp = true;
+      g.tableau[s].push(c);
+    }
+  }
+  assert.equal(g.canAutoFinish(), true);
+  let steps = 0;
+  while (g.autoFinishStep()) steps++;
+  assert.equal(steps, 52);
+  assert.equal(g.won, true);
+  assert.equal(g.canAutoFinish(), false); // already won
+});
