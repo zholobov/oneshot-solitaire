@@ -280,7 +280,8 @@ export class UI {
       return;
     }
     if (!d.moved) {
-      if (this.game.autoMoveFrom(d.from, d.index)) this.callbacks.onAction();
+      // Foundation cards only move by deliberate drag, never by tap.
+      if (d.from.k !== 'f' && this.game.autoMoveFrom(d.from, d.index)) this.callbacks.onAction();
       return;
     }
     d.ids.forEach((id) => this.nodes.get(id).classList.remove('dragging'));
