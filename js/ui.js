@@ -21,9 +21,11 @@ export class UI {
     this.autoFinishBtn = doc.getElementById('btn-autofinish');
     this.inputLocked = false;
     this.drag = null;
+    this.positions = new Map(); // card id -> {x, y, z} at rest
     this.buildSlots();
     this.buildCards();
     this.layoutInstant();
+    this.attachInput();
   }
 
   setGame(game) {
@@ -136,6 +138,7 @@ export class UI {
   }
 
   applyPos(el, x, y, z) {
+    this.positions.set(Number(el.dataset.id), { x, y, z });
     const transform = `translate3d(${x}px, ${y}px, 0)`;
     if (el.style.transform !== transform) {
       el.style.transform = transform;
@@ -176,6 +179,145 @@ export class UI {
     // Stock slot shows a recycle hint when tapping it would recycle the waste.
     this.slots.stock.textContent = g.stock.length === 0 && g.waste.length > 0 ? '↻' : '';
     this.autoFinishBtn.hidden = !g.canAutoFinish();
+  }
+
+  // --- input ---
+
+  attachInput() {
+    this.board.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+    this.board.addEventListener('pointermove', (e) => this.onPointerMove(e));
+    this.board.addEventListener('pointerup', (e) => this.onPointerUp(e));
+    this.board.addEventListener('pointercancel', () => this.cancelDrag());
+  }
+
+  boardPoint(e) {
+    const r = this.board.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  // Locate a card id in the game state.
+  findCard(id) {
+    const g = this.game;
+    for (let i = 0; i < 7; i++) {
+      const index = g.tableau[i].findIndex((c) => c.id === id);
+      if (index >= 0) return { ref: { k: 't', i }, index, pile: g.tableau[i] };
+    }
+    let index = g.waste.findIndex((c) => c.id === id);
+    if (index >= 0) return { ref: { k: 'w' }, index, pile: g.waste };
+    for (let i = 0; i < 4; i++) {
+      index = g.foundations[i].findIndex((c) => c.id === id);
+      if (index >= 0) return { ref: { k: 'f', i }, index, pile: g.foundations[i] };
+    }
+    index = g.stock.findIndex((c) => c.id === id);
+    if (index >= 0) return { ref: { k: 's' }, index, pile: g.stock };
+    return null;
+  }
+
+  onPointerDown(e) {
+    if (this.inputLocked || this.drag) return;
+    e.preventDefault();
+    const p = this.boardPoint(e);
+    const base = { pointerId: e.pointerId, startX: p.x, startY: p.y, moved: false };
+    const cardEl = e.target.closest('.card');
+    if (cardEl) {
+      const id = Number(cardEl.dataset.id);
+      const loc = this.findCard(id);
+      if (!loc) return;
+      if (loc.ref.k === 's') {
+        this.drag = { ...base, mode: 'stock' };
+      } else {
+        const isTop = loc.index === loc.pile.length - 1;
+        if ((loc.ref.k === 'w' || loc.ref.k === 'f') && !isTop) return;
+        const card = loc.pile[loc.index];
+        if (!card.faceUp) return;
+        const ids = loc.pile.slice(loc.index).map((c) => c.id);
+        this.drag = {
+          ...base,
+          mode: 'cards',
+          from: loc.ref,
+          index: loc.index,
+          ids,
+          origins: ids.map((cid) => ({ ...this.positions.get(cid) })),
+        };
+      }
+    } else if (e.target.closest('.slot')?.dataset.zone === 'stock') {
+      this.drag = { ...base, mode: 'stock' };
+    } else {
+      return;
+    }
+    this.board.setPointerCapture(e.pointerId);
+  }
+
+  onPointerMove(e) {
+    const d = this.drag;
+    if (!d || e.pointerId !== d.pointerId || d.mode !== 'cards') return;
+    const p = this.boardPoint(e);
+    const dx = p.x - d.startX;
+    const dy = p.y - d.startY;
+    if (!d.moved) {
+      if (Math.hypot(dx, dy) < 8) return;
+      d.moved = true;
+      d.ids.forEach((id, i) => {
+        const el = this.nodes.get(id);
+        el.classList.add('dragging');
+        el.style.zIndex = 1000 + i;
+      });
+    }
+    d.ids.forEach((id, i) => {
+      const o = d.origins[i];
+      this.nodes.get(id).style.transform = `translate3d(${o.x + dx}px, ${o.y + dy}px, 0)`;
+    });
+  }
+
+  onPointerUp(e) {
+    const d = this.drag;
+    if (!d || e.pointerId !== d.pointerId) return;
+    this.drag = null;
+    const p = this.boardPoint(e);
+    const dist = Math.hypot(p.x - d.startX, p.y - d.startY);
+    if (d.mode === 'stock') {
+      if (dist < 8 && this.game.draw()) this.callbacks.onAction();
+      return;
+    }
+    if (!d.moved) {
+      if (this.game.autoMoveFrom(d.from, d.index)) this.callbacks.onAction();
+      return;
+    }
+    d.ids.forEach((id) => this.nodes.get(id).classList.remove('dragging'));
+    const to = this.dropTarget(d, p);
+    if (to && this.game.moveCard(d.from, d.index, to)) {
+      this.callbacks.onAction();
+    } else {
+      this.render(); // snap back
+    }
+  }
+
+  cancelDrag() {
+    const d = this.drag;
+    if (!d) return;
+    this.drag = null;
+    if (d.mode === 'cards' && d.moved) {
+      d.ids.forEach((id) => this.nodes.get(id).classList.remove('dragging'));
+      this.render();
+    }
+  }
+
+  // Pick the pile under the dragged card's center, if any.
+  dropTarget(d, p) {
+    const { colX, cardW, cardH, tabY } = this.geom;
+    const o = d.origins[0];
+    const cx = o.x + (p.x - d.startX) + cardW / 2;
+    const cy = o.y + (p.y - d.startY) + cardH / 2;
+    let col = -1;
+    for (let i = 0; i < 7; i++) {
+      if (Math.abs(cx - (colX[i] + cardW / 2)) <= (cardW + 8) / 2) col = i;
+    }
+    if (col < 0) return null;
+    if (cy < tabY - 4) {
+      if (col >= 3) return { k: 'f', i: col - 3 };
+      return null; // stock/waste area is not a drop target
+    }
+    return { k: 't', i: col };
   }
 
   updateHud(moves, elapsedMs) {
