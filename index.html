@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-shot Solitaire · model benchmark log</title>
+<meta name="description" content="One prompt, one attempt, no fixes. The same Solitaire PWA brief given to frontier and local models every six months to track progress.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --felt: #1e5b3a;
+  --felt-deep: #15432b;
+  --felt-ink: #dfeadf;
+  --felt-muted: #a9c4b1;
+  --card: #fbf8f1;
+  --card-edge: #e6dfd0;
+  --card-ink: #1b1b1b;
+  --red: #b0262d;
+  --black: #1b1b1b;
+  --gold: #d9be6f;
+  --display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --body: "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--felt);
+  background-image: radial-gradient(ellipse at 50% 0%, #27704a 0%, var(--felt) 45%, var(--felt-deep) 100%);
+  color: var(--felt-ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+a { color: inherit; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+.page { max-width: 68rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+/* ---- header ---- */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 1rem;
+}
+h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2.4rem, 6.5vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.25rem;
+  color: #fff;
+  max-width: 14ch;
+}
+.lede { max-width: 52ch; margin: 0; color: var(--felt-ink); }
+.lede + .lede { margin-top: 0.75rem; }
+
+/* ---- sections ---- */
+section { margin-top: 4rem; }
+h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 0.25rem;
+  color: #fff;
+}
+.section-note { margin: 0 0 1.5rem; color: var(--felt-muted); max-width: 60ch; }
+
+/* ---- prompt ---- */
+.prompt {
+  border: 1px solid rgba(217,190,111,0.45);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  background: rgba(0,0,0,0.18);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  color: #f1f5ee;
+}
+.prompt-meta {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--felt-muted);
+  margin: 0.75rem 0 0;
+}
+
+/* ---- rounds ---- */
+.round-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.5rem; }
+.legend {
+  display: flex; gap: 1.25rem; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--felt-muted);
+  margin: 0.25rem 0 1.5rem;
+}
+.legend span::before { content: "■"; margin-right: 0.4rem; font-size: 0.9em; }
+.legend .frontier::before { color: #ff8a8f; }
+.legend .local::before { color: #f2f2f2; }
+
+.tableau {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.tableau + .group-label { margin-top: 2rem; }
+.group-label {
+  font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--felt-muted); margin: 0 0 0.75rem;
+}
+
+/* ---- the card ---- */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 5 / 7;
+  background: var(--card);
+  color: var(--card-ink);
+  border: 1px solid var(--card-edge);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 10px 24px -12px rgba(0,0,0,0.65), 0 2px 4px rgba(0,0,0,0.25);
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.card:hover, .card:focus-within { transform: translateY(-4px); box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 18px 30px -14px rgba(0,0,0,0.7), 0 3px 6px rgba(0,0,0,0.25); }
+.card.red { --suit: var(--red); }
+.card.black { --suit: var(--black); }
+
+.corner {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--suit);
+  line-height: 1;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem;
+  font-size: 1.35rem;
+}
+.corner .suit { font-size: 1.1rem; }
+.corner.bottom {
+  position: absolute; right: 1rem; bottom: 0.9rem;
+  transform: rotate(180deg);
+}
+
+.card-body { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center; padding: 0.5rem 0; }
+.model {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 1.05;
+  color: var(--suit);
+  margin: 0;
+}
+.model small { display: block; font-family: var(--body); font-weight: 500; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6b6b; margin-top: 0.5rem; }
+.conditions {
+  font-family: var(--body);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: #3c3c3c;
+  margin: 0.9rem 0 0;
+}
+.conditions b { font-weight: 600; color: var(--card-ink); }
+
+.card-actions {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  padding-right: 2.25rem; /* room for bottom corner index */
+}
+.card-actions a {
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 500;
+  text-decoration: none;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--suit);
+  color: var(--suit);
+}
+.card-actions a.play { background: var(--suit); color: var(--card); }
+.card-actions a:hover { text-decoration: underline; }
+
+.footnote {
+  font-size: 0.88rem; color: var(--felt-muted); max-width: 64ch; margin: 1.5rem 0 0;
+}
+.footnote code { font-family: var(--mono); font-size: 0.85em; color: var(--felt-ink); }
+
+/* ---- deal-in animation ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: deal 520ms cubic-bezier(.2,.7,.2,1) both; }
+  .tableau li:nth-child(1) .card { animation-delay: 80ms; }
+  .tableau li:nth-child(2) .card { animation-delay: 160ms; }
+  .tableau li:nth-child(3) .card { animation-delay: 240ms; }
+  .tableau li:nth-child(4) .card { animation-delay: 320ms; }
+  .tableau li:nth-child(5) .card { animation-delay: 400ms; }
+  .tableau.second li:nth-child(1) .card { animation-delay: 260ms; }
+  .tableau.second li:nth-child(2) .card { animation-delay: 340ms; }
+  .tableau.second li:nth-child(3) .card { animation-delay: 420ms; }
+  @keyframes deal {
+    from { opacity: 0; transform: translate(-1.5rem, -2.5rem) rotate(-6deg); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 2.25rem 1rem 4rem; }
+  .tableau { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.85rem; }
+  .card { padding: 0.7rem 0.75rem 0.8rem; border-radius: 10px; }
+  .corner { font-size: 1.1rem; }
+  .corner.bottom { right: 0.75rem; bottom: 0.7rem; }
+  .model { font-size: 1.3rem; }
+  .conditions { font-size: 0.78rem; }
+  .card-actions { padding-right: 1.6rem; }
+  .card-actions a { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">One-shot Solitaire · benchmark log</p>
+    <h1>One prompt. One attempt. Every six months.</h1>
+    <p class="lede">Each model gets the same brief and a single shot at building a working Klondike Solitaire PWA — no follow-ups, no fixes. The results are published as-is so they can be compared across rounds and across the gap between frontier and locally run models.</p>
+    <p class="lede">Frontier models run on Anthropic's and OpenAI's infrastructure; local models run on a single home machine.</p>
+  </header>
+
+  <section id="prompt" aria-labelledby="prompt-h">
+    <h2 id="prompt-h">The prompt</h2>
+    <p class="section-note">Given verbatim to every model. Nothing else — no spec, no follow-up.</p>
+<pre class="prompt">I want to build a classic Solitaire game as PWA app for a phone. Take a good existing spec for a game, nothing fancy. Main thing it should be fully working with one shot attempt to build it. Take your time to carefully design it and use standard development process so you can get to final result with no hiccups or flops in the middle.</pre>
+  </section>
+
+  <section id="round-2026-08" aria-labelledby="r1-h">
+    <div class="round-head">
+      <h2 id="r1-h">Round 1 · August 2026</h2>
+    </div>
+    <p class="legend"><span class="frontier">Red suits — frontier (cloud)</span><span class="local">Black suits — local</span></p>
+
+    <p class="group-label">Frontier · 22 Aug 2026</p>
+    <ul class="tableau">
+      <li>
+        <article class="card red">
+          <div class="corner" aria-hidden="true"><span>A</span><span class="suit">♥</span></div>
+          <div class="card-body">
+            <h3 class="model">Claude<small>Anthropic</small></h3>
+            <p class="conditions"><b>Fable</b> · 1M context · Claude Code, <b>Ultracode</b> mode</p>
+          </div>
+          <div class="card-actions">
+            <a class="play" href="https://zholobov.github.io/oneshot-solitaire-claude/">Play</a>
+            <a href="https://github.com/zholobov/oneshot-solitaire-claude">Source</a>
+          </div>
+          <div class="corner bottom" aria-hidden="true"><span>A</span><span class="suit">♥</span></div>
+        </article>
+      </li>
+      <li>
+        <article class="card red">
+          <div class="corner" aria-hidden="true"><span>A</span><span class="suit">♦</span></div>
+          <div class="card-body">
+            <h3 class="model">GPT<small>OpenAI</small></h3>
+            <p class="conditions"><b>Sol</b> · 1M context · <b>Max</b> effort</p>
+          </div>
+          <div class="card-actions">
+            <a class="play" href="https://zholobov.github.io/oneshot-solitaire-gpt/">Play</a>
+            <a href="https://github.com/zholobov/oneshot-solitaire-gpt">Source</a>
+          </div>
+          <div class="corner bottom" aria-hidden="true"><span>A</span><span class="suit">♦</span></div>
+        </article>
+      </li>
+    </ul>
+
+    <p class="group-label">Local · 23 Aug 2026</p>
+    <ul class="tableau second">
+      <li>
+        <article class="card black">
+          <div class="corner" aria-hidden="true"><span>A</span><span class="suit">♠</span></div>
+          <div class="card-body">
+            <h3 class="model">Nemotron 3 Super<small>NVIDIA</small></h3>
+            <p class="conditions">Run locally</p>
+          </div>
+          <div class="card-actions">
+            <a class="play" href="https://zholobov.github.io/oneshot-solitaire-nemotron3super/">Play</a>
+            <a href="https://github.com/zholobov/oneshot-solitaire-nemotron3super">Source</a>
+          </div>
+          <div class="corner bottom" aria-hidden="true"><span>A</span><span class="suit">♠</span></div>
+        </article>
+      </li>
+      <li>
+        <article class="card black">
+          <div class="corner" aria-hidden="true"><span>A</span><span class="suit">♣</span></div>
+          <div class="card-body">
+            <h3 class="model">Gemma 4<small>Google</small></h3>
+            <p class="conditions">Run locally</p>
+          </div>
+          <div class="card-actions">
+            <a class="play" href="https://zholobov.github.io/oneshot-solitaire-gemma4/">Play</a>
+            <a href="https://github.com/zholobov/oneshot-solitaire-gemma4">Source</a>
+          </div>
+          <div class="corner bottom" aria-hidden="true"><span>A</span><span class="suit">♣</span></div>
+        </article>
+      </li>
+      <li>
+        <article class="card black">
+          <div class="corner" aria-hidden="true"><span>A</span><span class="suit">♠</span></div>
+          <div class="card-body">
+            <h3 class="model">Qwen 3.6<small>Alibaba</small></h3>
+            <p class="conditions">Run locally</p>
+          </div>
+          <div class="card-actions">
+            <a class="play" href="https://zholobov.github.io/oneshot-solitaire-qwen36/">Play</a>
+            <a href="https://github.com/zholobov/oneshot-solitaire-qwen36">Source</a>
+          </div>
+          <div class="corner bottom" aria-hidden="true"><span>A</span><span class="suit">♠</span></div>
+        </article>
+      </li>
+    </ul>
+
+    <p class="footnote">Published as generated. One exception: Nemotron's service worker used absolute paths (<code>/sw.js</code>, <code>/manifest.json</code>) that can't resolve under a GitHub Pages subpath, so a separate, clearly labelled commit switches them to relative paths. The untouched original is the first commit in that repository.</p>
+  </section>
+</div>
+</body>
+</html>
