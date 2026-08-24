@@ -1,0 +1,6 @@
+{
+  "name": "solitaire",
+  "version": "1.0.0",
+  "description": "Classic Klondike Solitaire PWA",
+  "private": true
+}
