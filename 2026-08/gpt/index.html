@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a6249" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="A touch-friendly, offline-ready game of classic draw-one Klondike Solitaire."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Solitaire" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./icons/icon-64.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+    <title>Solitaire</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">♠</span>
+          <h1>Solitaire</h1>
+        </div>
+        <div class="toolbar" aria-label="Game controls">
+          <button id="install-button" class="toolbar-button" type="button" hidden>
+            <span class="toolbar-icon" aria-hidden="true">↓</span>
+            <span class="toolbar-label">Install</span>
+          </button>
+          <button id="undo-button" class="toolbar-button" type="button" disabled>
+            <span class="toolbar-icon" aria-hidden="true">↶</span>
+            <span class="toolbar-label">Undo</span>
+          </button>
+          <button id="new-game-button" class="toolbar-button toolbar-button-primary" type="button">
+            <span class="toolbar-icon" aria-hidden="true">＋</span>
+            <span class="toolbar-label">New game</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="game-strip" aria-label="Game status">
+        <div class="stat">
+          <span id="moves-value" class="stat-value">0</span>
+          <span class="stat-label">Moves</span>
+        </div>
+        <div class="stat">
+          <span id="time-value" class="stat-value">0:00</span>
+          <span class="stat-label">Time</span>
+        </div>
+        <p id="game-status" class="game-status">Tap the deck to begin</p>
+      </section>
+
+      <main class="game-main">
+        <section
+          id="board"
+          class="board"
+          aria-label="Klondike Solitaire game board"
+          aria-describedby="board-help"
+        >
+          <p id="board-help" class="sr-only">
+            Tap a face-up card to select it, then tap a destination. Tap the selected card again
+            to send it to a foundation when legal. Cards can also be dragged.
+          </p>
+          <div id="top-row" class="board-grid top-row" aria-label="Stock, waste, and foundations"></div>
+          <div id="tableau" class="board-grid tableau" aria-label="Tableau"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="new-game-dialog" class="game-dialog">
+      <div class="dialog-symbol" aria-hidden="true">♣</div>
+      <h2>Start over?</h2>
+      <p>Choose a fresh shuffled deal or restart this exact deal.</p>
+      <div class="dialog-actions">
+        <button id="fresh-deal-button" class="dialog-button dialog-button-primary" type="button">
+          New deal
+        </button>
+        <button id="restart-deal-button" class="dialog-button" type="button">Restart deal</button>
+        <button class="dialog-button dialog-button-quiet" type="button" data-close-dialog>
+          Keep playing
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="win-dialog" class="game-dialog win-dialog">
+      <div class="win-emblem" aria-hidden="true">♥</div>
+      <p class="eyebrow">Game complete</p>
+      <h2>You won!</h2>
+      <p id="win-summary">Every card found its way home.</p>
+      <div class="dialog-actions">
+        <button id="win-new-deal-button" class="dialog-button dialog-button-primary" type="button">
+          Play again
+        </button>
+        <button class="dialog-button dialog-button-quiet" type="button" data-close-dialog>
+          View board
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="install-dialog" class="game-dialog">
+      <div class="dialog-symbol" aria-hidden="true">♦</div>
+      <h2>Install Solitaire</h2>
+      <p id="install-instructions">
+        Open your browser menu and choose Install app or Add to Home Screen.
+      </p>
+      <div class="dialog-actions">
+        <button class="dialog-button dialog-button-primary" type="button" data-close-dialog>
+          Got it
+        </button>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <noscript>This game requires JavaScript to run.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
