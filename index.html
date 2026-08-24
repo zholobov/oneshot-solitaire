@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Classic Solitaire PWA">
+    <meta name="theme-color" content="#2e7d32">
+    <title>Classic Solitaire</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- iOS Support -->
+    <link rel="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Solitaire</h1>
+            <div class="controls">
+                <button id="new-game-btn">New Game</button>
+            </div>
+        </header>
+
+        <main id="game-board">
+            <!-- Top Area: Stock, Waste, Foundation -->
+            <div class="top-row">
+                <div class="left-side">
+                    <div id="stock" class="card-pile stock-pile"></div>
+                    <div id="waste" class="card-pile waste-pile"></div>
+                </div>
+                <div class="right-side">
+                    <div id="foundation-container">
+                        <div id="f-hearts" class="card-pile foundation-pile" data-suit="hearts"></div>
+                        <div id="f-diamonds" class="card-pile foundation-pile" data-suit="diamonds"></div>
+                        <div id="f-clubs" class="card-pile foundation-pile" data-suit="clubs"></div>
+                        <div id="f-spades" class="card-pile foundation-pile" data-suit="spades"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau Area -->
+            <div id="tableau-container" class="tableau-container">
+                <div id="t-1" class="card-pile tableau-pile"></div>
+                <div id="t-2" class="card-pile tableau-pile"></div>
+                <div id="t-3" class="card-pile tableau-pile"></div>
+                <div id="t-4" class="card-pile tableau-pile"></div>
+                <div id="t-5" class="card-pile tableau-pile"></div>
+                <div id="t-6" class="card-pile tableau-pile"></div>
+                <div id="t-7" class="card-pile tableau-pile"></div>
+            </div>
+        </main>
+
+        <footer id="status-bar">
+            <span id="move-count">Moves: 0</span>
+            <span id="timer">00:00</span>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</body>
+</html>
