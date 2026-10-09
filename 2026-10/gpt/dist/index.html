@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#123e34">
+    <meta name="description" content="Classic draw-one Solitaire. A quiet little card game that saves your place and works offline.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Solitaire">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Pocket Solitaire</title>
+    <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">&#9824;</span>
+          <div>
+            <h1>Solitaire</h1>
+            <p>Classic &middot; Draw one</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="install" class="quiet-button">Install</button>
+          <button id="help" class="help-button" aria-label="How to play">?</button>
+        </div>
+      </header>
+
+      <p id="warning" class="warning" role="alert" hidden></p>
+      <noscript><p class="warning">Solitaire needs JavaScript to play. Please enable it in your browser.</p></noscript>
+
+      <dl class="stats">
+        <div><dt>Time</dt><dd id="time">0:00</dd></div>
+        <div><dt>Moves</dt><dd id="moves">0</dd></div>
+        <div><dt>Cards home</dt><dd><span id="progress">0</span><span class="stat-total"> / 52</span></dd></div>
+      </dl>
+
+      <section id="board" class="board" aria-label="Solitaire table">
+        <p>Dealing your cards...</p>
+      </section>
+
+      <div class="finish-row"><button id="finish" class="finish-button" hidden>Finish game <span aria-hidden="true">&#8599;</span></button></div>
+      <p id="message" class="message" role="status" aria-live="polite" aria-atomic="true">Tap a card, then a highlighted pile. Or drag.</p>
+
+      <nav class="toolbar" aria-label="Game controls">
+        <button id="undo" aria-keyshortcuts="Control+Z Meta+Z" disabled><span aria-hidden="true">&#8630;</span>Undo</button>
+        <button id="hint"><span aria-hidden="true">&#10022;</span>Hint</button>
+        <button id="restart" disabled><span aria-hidden="true">&#8635;</span>Restart</button>
+        <button id="new-game" class="new-game"><span aria-hidden="true">+</span>New game</button>
+      </nav>
+
+      <footer class="app-footer">
+        <span class="connection"><span class="connection-dot" aria-hidden="true"></span><span id="connection">On this device</span></span>
+        <button id="update" class="text-button" hidden>Update ready</button>
+        <span>Just cards. No ads.</span>
+      </footer>
+    </main>
+
+    <dialog id="help-dialog" aria-labelledby="help-title">
+      <h2 id="help-title" tabindex="-1" autofocus>A familiar little game.</h2>
+      <p class="dialog-intro">Klondike is the classic seven-column Solitaire.</p>
+      <h3>The goal</h3>
+      <p>Move all 52 cards to the four suit piles at the top. Each starts with an ace and ends with a king, all in the same suit.</p>
+      <h3>On the table</h3>
+      <ul>
+        <li>Build downward, switching between red and black. A black 7 goes on a red 8.</li>
+        <li>Move one face-up card or a whole face-up run together.</li>
+        <li>Only a king, or a run starting with a king, can fill an empty column.</li>
+        <li>Covered cards turn over when you uncover them. You can also move the top card of a suit pile back to the table.</li>
+      </ul>
+      <h3>Draw and play</h3>
+      <p>Tap the face-down deck to draw one card. Only the top discard can be played. When the deck is empty, tap its circular arrow to reuse the discards, as often as you like.</p>
+      <p><strong>Tap a card, then a highlighted pile.</strong> Or drag the card. With a keyboard, use Tab and Enter or Space. Escape clears a selection. Ctrl/Cmd+Z undoes a move.</p>
+      <p>Hint suggests a legal move, not a guaranteed solution. Not every shuffle can be won. Finish game appears when the deck and discard are empty and all remaining cards are face up.</p>
+      <p class="fine-print">Your game and up to 200 undo steps are saved on this device. The clock pauses when the app is in the background. Clearing browser data removes your save.</p>
+      <div class="dialog-actions"><button class="primary-button" data-close>Got it</button></div>
+    </dialog>
+
+    <dialog id="install-dialog" aria-labelledby="install-title">
+      <h2 id="install-title" tabindex="-1" autofocus>Make room for a little play.</h2>
+      <p>Install Solitaire like an app. It opens in its own window and works without an internet connection after the first full visit.</p>
+      <h3>On iPhone or iPad</h3>
+      <p>Open this page in <strong>Safari</strong>, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p>
+      <h3>On Android</h3>
+      <p>Open the browser menu and choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
+      <p class="fine-print">Installation needs an HTTPS address, which is a secure website address. A local development address works only on the computer running the app. Wait for "Offline ready" before going offline.</p>
+      <div class="dialog-actions"><button class="primary-button" data-close>Got it</button></div>
+    </dialog>
+
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Start a new game?</h2>
+      <p id="confirm-description">Your current game will be replaced.</p>
+      <div class="dialog-actions">
+        <button data-close autofocus>Keep playing</button>
+        <button id="confirm-action" class="primary-button">New game</button>
+      </div>
+    </dialog>
+
+    <dialog id="win-dialog" class="win-dialog" aria-labelledby="win-title">
+      <div class="win-mark" aria-hidden="true">&#9824;</div>
+      <p class="eyebrow">All 52 cards, right at home.</p>
+      <h2 id="win-title">You won!</h2>
+      <p id="win-detail"></p>
+      <div class="dialog-actions">
+        <button data-close>View table</button>
+        <button id="win-new" class="primary-button">Play again</button>
+      </div>
+    </dialog>
+  </body>
+</html>
