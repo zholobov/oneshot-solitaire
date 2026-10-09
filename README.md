@@ -1,7 +1,7 @@
 # One-shot Solitaire
 
-A recurring benchmark: the same Solitaire-PWA prompt is given to frontier and local models, one attempt
-each, and the results are published exactly as generated. Re-run every six months to track progress.
+A benchmark: the same Solitaire-PWA prompt is given to frontier and local models, one attempt
+each, and the results are published exactly as generated.
 
 Live: https://zholobov.github.io/oneshot-solitaire/
 
