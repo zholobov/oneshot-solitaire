@@ -1,0 +1,24 @@
+{
+  "name": "pocket-solitaire",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A small, offline-first Klondike Solitaire for your phone.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:browser": "npm run build && playwright test",
+    "check": "npm run build && node --test tests/*.test.mjs && playwright test",
+    "icons": "node scripts/icons.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.56.1",
+    "typescript": "5.9.3"
+  }
+}
