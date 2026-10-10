@@ -168,21 +168,23 @@ body {
 
 .corner {
   position: absolute;
-  top: 2%;
+  top: 3%;
   left: 7%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: baseline;
+  gap: calc(var(--card-w) * 0.02);
   font-size: calc(var(--card-w) * 0.28);
   line-height: 1.05;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .corner.br {
   top: auto;
   left: auto;
   right: 7%;
-  bottom: 2%;
+  bottom: 3%;
   transform: rotate(180deg);
 }
 
