@@ -84,6 +84,7 @@ function boot(): void {
       const state = parseState(value);
       if (state === null) throw new Error('Invalid state');
       controller.loadState(state);
+      view.render(controller.state, false); // debug/test hook: place cards instantly
     },
     dispatch: (action) => controller.dispatch(action),
   };
