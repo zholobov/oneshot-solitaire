@@ -30,3 +30,11 @@ export const S = (rank: number) => cardId(0, rank); // spades
 export const H = (rank: number) => cardId(1, rank); // hearts
 export const D = (rank: number) => cardId(2, rank); // diamonds
 export const C = (rank: number) => cardId(3, rank); // clubs
+
+/** All 52 cards face-up in four full alternating runs: trivially auto-finishable. */
+export function fullRunState(): GameState {
+  const run = (a: (rank: number) => number, b: (rank: number) => number) =>
+    Array.from({ length: 13 }, (_, i) => (i % 2 === 0 ? a(13 - i) : b(13 - i)));
+  const tableau = [run(S, H), run(H, S), run(D, C), run(C, D), [], [], []];
+  return fixture({ tableau, faceUp: tableau.map((c) => c.length) });
+}
