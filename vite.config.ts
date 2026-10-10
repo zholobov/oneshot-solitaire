@@ -22,8 +22,10 @@ export default defineConfig({
           { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
+      // The plugin precaches the manifest and its icons itself; the glob covers the rest.
+      includeAssets: ['icons/apple-touch-icon.png'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg}'],
       },
     }),
   ],

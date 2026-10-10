@@ -215,6 +215,11 @@ test('serves a manifest and works offline after the service worker installs', as
   const manifest = await page.request.get('manifest.webmanifest');
   expect(manifest.ok()).toBe(true);
   expect((await manifest.json()).name).toBe('Solitaire');
+  // The precache list must name each file once; Workbox only tolerates duplicates by luck of equal revisions.
+  const sw = await (await page.request.get('sw.js')).text();
+  const urls = [...sw.matchAll(/\{url:"([^"]+)"/g)].map((m) => m[1]);
+  expect(urls.length).toBeGreaterThan(5);
+  expect(new Set(urls).size).toBe(urls.length);
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 30_000 });
   await context.setOffline(true);
   await page.reload();
