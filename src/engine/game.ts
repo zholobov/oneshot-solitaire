@@ -95,3 +95,45 @@ export function isValidRun(cards: readonly CardId[]): boolean {
   }
   return true;
 }
+
+export function validate(state: GameState, action: Action): string | null {
+  switch (action.type) {
+    case 'draw':
+      return state.stock.length > 0 ? null : 'stock is empty';
+    case 'recycle':
+      if (state.stock.length > 0) return 'stock is not empty';
+      return state.waste.length > 0 ? null : 'waste is empty';
+    case 'move':
+      return validateMove(state, action);
+  }
+}
+
+export function apply(state: GameState, action: Action): GameState {
+  const problem = validate(state, action);
+  if (problem !== null) throw new Error(`Invalid action ${action.type}: ${problem}`);
+  switch (action.type) {
+    case 'draw': {
+      const k = Math.min(state.drawCount, state.stock.length);
+      const drawn = state.stock.slice(state.stock.length - k).reverse();
+      return {
+        ...state,
+        stock: state.stock.slice(0, state.stock.length - k),
+        waste: [...state.waste, ...drawn],
+        wasteFan: k,
+        moves: state.moves + 1,
+      };
+    }
+    case 'recycle':
+      return { ...state, stock: [...state.waste].reverse(), waste: [], wasteFan: 0, moves: state.moves + 1 };
+    case 'move':
+      return applyMove(state, action);
+  }
+}
+
+function validateMove(_state: GameState, _action: Extract<Action, { type: 'move' }>): string | null {
+  return 'moves not implemented';
+}
+
+function applyMove(state: GameState, _action: Extract<Action, { type: 'move' }>): GameState {
+  return state;
+}
