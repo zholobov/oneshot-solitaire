@@ -9,7 +9,7 @@ Live: https://zholobov.github.io/oneshot-solitaire/
 
 ```
 index.html          the log — the prompt and one section per round
-<YYYY-MM>/<model>/  one attempt, as generated (GPT: source + committed dist/, served from dist/)
+<YYYY-MM>/<model>/  one attempt, as generated (builds with a dist/: source + committed dist/, served from dist/)
 ```
 
 ## Adding a round
