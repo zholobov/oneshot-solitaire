@@ -130,10 +130,79 @@ export function apply(state: GameState, action: Action): GameState {
   }
 }
 
-function validateMove(_state: GameState, _action: Extract<Action, { type: 'move' }>): string | null {
-  return 'moves not implemented';
+/** The cards that would move for `from`/`count`, bottom first; undefined if the location cannot supply them. */
+export function movingCards(state: GameState, from: Loc, count: number): readonly CardId[] | undefined {
+  if (!Number.isInteger(count) || count < 1) return undefined;
+  switch (from.pile) {
+    case 'waste':
+      return count === 1 && state.waste.length > 0 ? state.waste.slice(-1) : undefined;
+    case 'foundation': {
+      const pile = state.foundations[from.index];
+      return pile !== undefined && count === 1 && pile.length > 0 ? pile.slice(-1) : undefined;
+    }
+    case 'tableau': {
+      const col = state.tableau[from.index];
+      const up = state.faceUp[from.index];
+      if (col === undefined || up === undefined || count > up) return undefined;
+      return col.slice(col.length - count);
+    }
+  }
 }
 
-function applyMove(state: GameState, _action: Extract<Action, { type: 'move' }>): GameState {
-  return state;
+function validateMove(state: GameState, { from, to, count }: Extract<Action, { type: 'move' }>): string | null {
+  if (sameLoc(from, to)) return 'source and destination are the same';
+  const cards = movingCards(state, from, count);
+  if (cards === undefined) return 'no such cards to move';
+  if (!isValidRun(cards)) return 'cards are not a valid run';
+  const bottom = cards[0] as CardId;
+  if (to.pile === 'foundation') {
+    if (from.pile === 'foundation') return 'cannot move between foundations';
+    const pile = state.foundations[to.index];
+    if (pile === undefined) return 'no such foundation';
+    if (cards.length !== 1) return 'only one card may go to a foundation';
+    return canPlaceOnFoundation(bottom, pile) ? null : 'card does not fit on foundation';
+  }
+  if (to.pile === 'tableau') {
+    const col = state.tableau[to.index];
+    if (col === undefined) return 'no such column';
+    const top = topCard(col);
+    if (top === undefined) return rankOf(bottom) === KING ? null : 'only a king may go to an empty column';
+    return canStackOnTableau(bottom, top) ? null : 'card does not fit on column';
+  }
+  return 'cannot move cards there';
+}
+
+function applyMove(state: GameState, { from, to, count }: Extract<Action, { type: 'move' }>): GameState {
+  const cards = movingCards(state, from, count) ?? [];
+  const foundations = state.foundations.map((pile) => pile.slice());
+  const tableau = state.tableau.map((col) => col.slice());
+  const faceUp = state.faceUp.slice();
+  const waste = state.waste.slice();
+  let wasteFan = state.wasteFan;
+
+  switch (from.pile) {
+    case 'waste':
+      waste.pop();
+      wasteFan = Math.max(0, wasteFan - 1);
+      break;
+    case 'foundation':
+      foundations[from.index]?.pop();
+      break;
+    case 'tableau': {
+      const col = tableau[from.index] ?? [];
+      col.length -= count;
+      const up = (faceUp[from.index] ?? 0) - count;
+      faceUp[from.index] = up === 0 && col.length > 0 ? 1 : up;
+      break;
+    }
+  }
+
+  if (to.pile === 'foundation') {
+    foundations[to.index]?.push(...cards);
+  } else if (to.pile === 'tableau') {
+    tableau[to.index]?.push(...cards);
+    faceUp[to.index] = (faceUp[to.index] ?? 0) + count;
+  }
+
+  return { ...state, waste, wasteFan, foundations, tableau, faceUp, moves: state.moves + 1 };
 }
