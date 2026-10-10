@@ -173,7 +173,7 @@ interface SaveFile { version: 1; state: GameState; history: GameState[]; elapsed
 interface Settings { drawCount: 1 | 3 }
 ```
 
-Saves happen after every change (synchronously; the data is a few KB). History is capped at the most recent 500 states. On load, the save is validated with `validateState` for `state` and every history entry; any failure discards the save and deals a new game. Storage errors (quota, private mode) are caught and logged; the game continues unsaved.
+Saves happen after every change (synchronously; roughly 150 KB at the 500-state history cap, a few milliseconds on a phone). History is capped at the most recent 500 states. On load, the save is validated with `validateState` for `state` and every history entry; any failure discards the save and deals a new game. Storage errors (quota, private mode) are caught and logged; the game continues unsaved.
 
 ### 4.8 PWA
 
